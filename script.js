@@ -24,114 +24,123 @@ const alphabetList = [
     { letter: "Z", subject: "Zamek", phrase: "Z jak Zamek", img: "images/zamek.png" }
 ];
 
-let currentIndex = 0;
-let step = 0;
-let isSpeaking = false;
-let appReady = false; // interactions enabled only after preload
+const mainText = document.getElementById("main-text");
+const image = document.getElementById("image");
+const loadingScreen = document.getElementById("loading-screen");
 
-const mainText = document.getElementById('main-text');
-const image = document.getElementById('image');
-const loadingScreen = document.getElementById('loading-screen');
+let currentIndex = -1;
+let currentStep = 0;
+let isLocked = false;
+let appReady = false;
+let firstInteraction = true; // special handling for first gesture
 
-// Speak text with a small delay
+// Preload images
+function preloadImages(list) {
+    return Promise.all(
+        list.map(item => {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.src = item.img;
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+            });
+        })
+    );
+}
+
 function speak(text) {
     return new Promise(resolve => {
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'pl-PL';
+        utterance.lang = "pl-PL";
         utterance.rate = 0.9;
         utterance.onend = () => setTimeout(resolve, 50);
         speechSynthesis.speak(utterance);
     });
 }
 
-// Fade-in helper
-function showElement(element, text = null) {
-    element.style.opacity = 0;
-    if (text !== null) element.textContent = text;
-    requestAnimationFrame(() => element.style.opacity = 1);
-}
-
-// Hide loading screen with fade
 function hideLoadingScreen() {
     loadingScreen.style.opacity = 0;
     setTimeout(() => {
         loadingScreen.style.display = "none";
         mainText.style.display = "block";
-        appReady = true; // interactions enabled now
+        appReady = true;
     }, 500);
 }
 
-// Preload all images
-function preloadImages(list) {
-    return Promise.all(
-        list.map(item => new Promise(resolve => {
-            const img = new Image();
-            img.src = item.img;
-            img.onload = () => resolve();
-            img.onerror = () => resolve(); // ignore missing images
-        }))
-    );
-}
-
-// Advance steps
 async function nextStep() {
-    if (!appReady || isSpeaking) return;
-    isSpeaking = true;
+    if (isLocked) return;
+    isLocked = true;
 
-    if (currentIndex >= alphabetList.length) {
-        showElement(mainText, "Koniec!");
-        image.style.display = "none";
-        isSpeaking = false;
-        return;
+    if (currentStep === 0) {
+        currentIndex++;
+        if (currentIndex >= alphabetList.length) {
+            currentIndex = 0;
+        }
     }
 
     const currentItem = alphabetList[currentIndex];
 
-    switch(step) {
-        case 0:
-            if (currentItem.img) {
-                image.src = currentItem.img;
-                image.onload = () => {
-                    image.style.display = "block";
-                    mainText.style.opacity = 0;
-                };
-                image.onerror = () => {
-                    image.style.display = "none";
-                    showElement(mainText, currentItem.letter);
-                };
-            } else {
-                image.style.display = "none";
-                showElement(mainText, currentItem.letter);
-            }
-            await speak(currentItem.letter);
-            step++;
-            break;
-        case 1:
-            await speak(currentItem.subject);
-            step++;
-            break;
-        case 2:
-            await speak(currentItem.phrase);
-            step++;
-            break;
-        case 3:
-            currentIndex++;
-            step = 0;
-            break;
+    if (currentStep === 0) {
+        if (currentItem.img) {
+            image.src = currentItem.img;
+            image.style.display = "block";
+            mainText.style.opacity = 0;
+        } else {
+            image.style.display = "none";
+            mainText.textContent = currentItem.letter;
+            mainText.style.opacity = 1;
+        }
+        await speak(currentItem.letter);
+    } else if (currentStep === 1) {
+        await speak(currentItem.subject);
+    } else if (currentStep === 2) {
+        await speak(currentItem.phrase);
     }
 
-    isSpeaking = false;
+    currentStep = (currentStep + 1) % 3;
+    isLocked = false;
 }
 
-// Event listeners
-document.addEventListener('keydown', () => { if(appReady) nextStep(); });
-document.addEventListener('click', () => { if(appReady) nextStep(); });
-document.addEventListener('touchstart', () => { if(appReady) nextStep(); });
+// Handle first tap separately
+async function handleInteraction() {
+    if (!appReady) return;
 
-// Initialize app after DOM loaded
+    if (firstInteraction) {
+        firstInteraction = false;
+        // Force start with index 0 and step 0 immediately here
+        currentIndex = 0;
+        currentStep = 0;
+
+        const currentItem = alphabetList[currentIndex];
+        if (currentItem.img) {
+            image.src = currentItem.img;
+            image.style.display = "block";
+            mainText.style.opacity = 0;
+        } else {
+            image.style.display = "none";
+            mainText.textContent = currentItem.letter;
+            mainText.style.opacity = 1;
+        }
+
+        // 🔑 Speak the first letter directly in this handler (works on mobile)
+        speak(currentItem.letter).then(() => {
+            currentStep = 1; // move to next step for following interactions
+        });
+    } else {
+        nextStep();
+    }
+}
+
+// Wait for DOM and preload
 document.addEventListener('DOMContentLoaded', async () => {
     mainText.style.display = 'none';
     image.style.display = 'none';
-    await preloadImages(alphabetList); // preload all images
-    hideLoadingScreen(); // show main content
+
+    await preloadImages(alphabetList);
+    hideLoadingScreen();
 });
+
+// Input listeners
+document.addEventListener('keydown', handleInteraction);
+document.addEventListener('click', handleInteraction);
+document.addEventListener('touchstart', handleInteraction);
