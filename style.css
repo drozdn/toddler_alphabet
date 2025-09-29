@@ -1,0 +1,42 @@
+/* Full-screen centered layout */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #fefbd8;
+    font-family: 'Arial', sans-serif;
+    user-select: none;
+    touch-action: manipulation;
+}
+
+#app {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+#main-text {
+    font-size: 8vw; /* big title */
+    font-weight: bold;
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+    margin: 0 0 20px 0;
+}
+
+#image {
+    display: none;       /* hide initially */
+    width: 90vw;
+    height: 90vh;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+}
