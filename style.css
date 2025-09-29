@@ -1,17 +1,14 @@
-* {
+body, html {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
-}
-
-body, html {
     width: 100%;
     height: 100%;
-    font-family: sans-serif;
-    background-color: #fff8dc;
+    font-family: Arial, sans-serif;
+    background-color: #fff;
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
     overflow: hidden;
 }
 
@@ -19,63 +16,72 @@ body, html {
     font-size: 4em;
     font-weight: bold;
     text-align: center;
-    color: #333;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    margin: 20px;
 }
 
 #image {
     max-width: 100%;
     max-height: 100%;
-    display: block;
-    margin: auto;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     object-fit: contain;
+    display: none;
 }
 
-/* Loader */
 #loading-screen {
-    position: absolute;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    background: #fff8dc;
+    background-color: #ffffff;
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    flex-direction: column;
     transition: opacity 0.5s;
+    z-index: 1000;
 }
 
-.loader {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+.loader-container {
+    text-align: center;
 }
 
-.loader .dot {
-    width: 15px;
-    height: 15px;
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 8px solid #ccc;
+    border-top: 8px solid #4285f4;
     border-radius: 50%;
-    background-color: #333;
-    animation: bounce 0.6s infinite alternate;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
 }
 
-.loader .dot:nth-child(2) { animation-delay: 0.2s; }
-.loader .dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes bounce {
-    from { transform: translateY(0); }
-    to { transform: translateY(-15px); }
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 #loading-screen p {
+    margin: 5px 0;
     font-size: 1.2em;
-    color: #333;
-    margin-top: 5px;
+}
+
+.skip {
+    font-size: 0.9em;
+    color: #666;
+}
+
+#progress-bar-container {
+    width: 200px;
+    height: 10px;
+    background-color: #eee;
+    border-radius: 5px;
+    margin: 10px auto;
+    overflow: hidden;
+}
+
+#progress-bar {
+    width: 0%;
+    height: 100%;
+    background-color: #4285f4;
+    transition: width 0.2s;
 }

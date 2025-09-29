@@ -27,44 +27,63 @@ const alphabetList = [
 const mainText = document.getElementById("main-text");
 const image = document.getElementById("image");
 const loadingScreen = document.getElementById("loading-screen");
+const progressBar = document.getElementById('progress-bar');
+const progressText = document.getElementById('progress-text');
 
 let currentIndex = 0;
 let currentStep = 0; // 0=letter,1=subject,2=phrase
 let isLocked = false;
+let firstTapDone = false;
 let appReady = false;
-let firstInteraction = true;
 
-// Preload images
-function preloadImages(list) {
-    return Promise.all(
-        list.map(item => new Promise(resolve => {
-            const img = new Image();
-            img.src = item.img;
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-        }))
-    );
-}
+// Helper to safely convert to string
+const safeString = (val) => (val !== undefined && val !== null) ? String(val) : "";
 
-// Speak text with small delay
+// Preload images with progress
+let imagesLoaded = 0;
+const totalImages = alphabetList.length;
+
+alphabetList.forEach(item => {
+    const img = new Image();
+    img.src = safeString(item.img);
+    img.onload = img.onerror = () => {
+        imagesLoaded++;
+        const percent = Math.round((imagesLoaded / totalImages) * 100);
+        progressBar.style.width = percent + '%';
+        progressText.textContent = percent + '%';
+        if (imagesLoaded === totalImages) {
+            // All images loaded
+            setTimeout(hideLoadingScreen, 300);
+        }
+    };
+});
+
+// Speak helper (mobile-safe)
 function speak(text) {
     return new Promise(resolve => {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = "pl-PL";
-        utterance.rate = 0.9;
-        utterance.onend = () => setTimeout(resolve, 50);
-        speechSynthesis.speak(utterance);
+        try {
+            const utterance = new SpeechSynthesisUtterance(safeString(text));
+            utterance.lang = "pl-PL";
+            utterance.rate = 0.9;
+            utterance.onend = () => setTimeout(resolve, 50);
+            speechSynthesis.speak(utterance);
+        } catch (e) {
+            resolve();
+        }
     });
 }
 
 // Hide loader
 function hideLoadingScreen() {
-    loadingScreen.style.opacity = 0;
-    setTimeout(() => {
-        loadingScreen.style.display = "none";
-        mainText.style.display = "block";
-        appReady = true;
-    }, 500);
+    try {
+        loadingScreen.style.opacity = 0;
+        setTimeout(() => {
+            loadingScreen.style.display = "none";
+            appReady = true; // set ready before first tap
+        }, 500);
+    } catch (e) {
+        console.warn("Loader hide error ignored:", e);
+    }
 }
 
 // Main interaction
@@ -72,41 +91,40 @@ async function handleInteraction() {
     if (!appReady || isLocked) return;
     isLocked = true;
 
-    const currentItem = alphabetList[currentIndex];
+    // Handle first tap (must show first image and speak)
+    if (!firstTapDone) {
+        firstTapDone = true;
 
-    if (firstInteraction) {
-        firstInteraction = false;
+        const firstItem = alphabetList[currentIndex];
 
-        // Show first image
-        if (currentItem.img && currentItem.img.includes(".png")) {  // string check only
-            image.src = currentItem.img;
+        if (firstItem.img) {
+            image.src = safeString(firstItem.img);
             image.style.display = "block";
             mainText.style.opacity = 0;
         } else {
-            image.style.display = "none";
-            mainText.textContent = currentItem.letter;
+            mainText.textContent = safeString(firstItem.letter);
             mainText.style.opacity = 1;
+            image.style.display = "none";
         }
 
-        // Mobile speech unlock
-        const unlock = new SpeechSynthesisUtterance("");
-        speechSynthesis.speak(unlock);
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await speak(firstItem.letter);
+        currentStep = 1;
+        isLocked = false;
+        return;
+    }
 
-        // Speak first letter
-        await speak(currentItem.letter);
-        currentStep = 1; // next tap = subject
+    const currentItem = alphabetList[currentIndex];
 
-    } else {
+    try {
         if (currentStep === 0) {
-            if (currentItem.img && currentItem.img.includes(".png")) {
-                image.src = currentItem.img;
+            if (currentItem.img) {
+                image.src = safeString(currentItem.img);
                 image.style.display = "block";
                 mainText.style.opacity = 0;
             } else {
-                image.style.display = "none";
-                mainText.textContent = currentItem.letter;
+                mainText.textContent = safeString(currentItem.letter);
                 mainText.style.opacity = 1;
+                image.style.display = "none";
             }
             await speak(currentItem.letter);
             currentStep = 1;
@@ -121,24 +139,21 @@ async function handleInteraction() {
             currentIndex++;
             if (currentIndex >= alphabetList.length) currentIndex = 0;
         }
+    } catch (e) {
+        console.warn("Interaction error ignored:", e);
     }
 
     isLocked = false;
 }
 
 // Initialize app
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     mainText.style.display = 'none';
     image.style.display = 'none';
-
-    await preloadImages(alphabetList);
-    hideLoadingScreen();
 });
 
-// Event listeners
-document.addEventListener('click', handleInteraction);
-document.addEventListener('touchstart', handleInteraction);
-document.addEventListener('keydown', handleInteraction);
+// Use pointerdown for consistent cross-device first-tap behavior
+document.addEventListener('pointerdown', handleInteraction);
 
-// Skip loader
-loadingScreen.addEventListener('click', hideLoadingScreen);
+// Loader skip
+loadingScreen.addEventListener('pointerdown', hideLoadingScreen);
