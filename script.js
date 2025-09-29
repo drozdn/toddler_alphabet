@@ -36,123 +36,114 @@ let isLocked = false;
 let firstTapDone = false;
 let appReady = false;
 
-// Helper to safely convert to string
-const safeString = (val) => (val !== undefined && val !== null) ? String(val) : "";
-
 // Preload images with progress
 let imagesLoaded = 0;
 const totalImages = alphabetList.length;
 
 alphabetList.forEach(item => {
     const img = new Image();
-    img.src = safeString(item.img);
+    img.src = item.img;
     img.onload = img.onerror = () => {
         imagesLoaded++;
         const percent = Math.round((imagesLoaded / totalImages) * 100);
         progressBar.style.width = percent + '%';
         progressText.textContent = percent + '%';
         if (imagesLoaded === totalImages) {
-            // All images loaded
             setTimeout(hideLoadingScreen, 300);
         }
     };
 });
 
-// Speak helper (mobile-safe)
-function speak(text) {
-    return new Promise(resolve => {
-        try {
-            const utterance = new SpeechSynthesisUtterance(safeString(text));
-            utterance.lang = "pl-PL";
-            utterance.rate = 0.9;
-            utterance.onend = () => setTimeout(resolve, 50);
-            speechSynthesis.speak(utterance);
-        } catch (e) {
-            resolve();
-        }
-    });
-}
-
 // Hide loader
 function hideLoadingScreen() {
-    try {
-        loadingScreen.style.opacity = 0;
-        setTimeout(() => {
-            loadingScreen.style.display = "none";
-            appReady = true; // set ready before first tap
-        }, 500);
-    } catch (e) {
-        console.warn("Loader hide error ignored:", e);
-    }
+    loadingScreen.style.opacity = 0;
+    setTimeout(() => {
+        loadingScreen.style.display = "none";
+        appReady = true; // app ready before first tap
+    }, 500);
 }
 
-// Main interaction
-async function handleInteraction() {
-    if (!appReady || isLocked) return;
-    isLocked = true;
+// Speak helper
+function speak(text, callback) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "pl-PL";
+    utterance.rate = 0.9;
+    utterance.onend = () => setTimeout(callback, 50);
+    speechSynthesis.speak(utterance);
+}
 
-    // Handle first tap (must show first image and speak)
+// Handle first tap on mobile safely
+function handleFirstTap() {
     if (!firstTapDone) {
         firstTapDone = true;
+        const item = alphabetList[currentIndex];
 
-        const firstItem = alphabetList[currentIndex];
-
-        if (firstItem.img) {
-            image.src = safeString(firstItem.img);
+        if (item.img) {
+            image.src = item.img;
             image.style.display = "block";
             mainText.style.opacity = 0;
         } else {
-            mainText.textContent = safeString(firstItem.letter);
+            mainText.textContent = item.letter;
             mainText.style.opacity = 1;
             image.style.display = "none";
         }
 
-        await speak(firstItem.letter);
-        currentStep = 1;
-        isLocked = false;
-        return;
-    }
+        // Call speech directly in gesture handler (mobile-safe)
+        speak(item.letter, () => {
+            currentStep = 1;
+            isLocked = false;
+        });
 
-    const currentItem = alphabetList[currentIndex];
+        return true;
+    }
+    return false;
+}
+
+// Main interaction for subsequent taps
+function handleInteraction() {
+    if (!appReady || isLocked) return;
+    if (handleFirstTap()) return; // first tap handled
+
+    const item = alphabetList[currentIndex];
+    isLocked = true;
 
     try {
         if (currentStep === 0) {
-            if (currentItem.img) {
-                image.src = safeString(currentItem.img);
+            if (item.img) {
+                image.src = item.img;
                 image.style.display = "block";
                 mainText.style.opacity = 0;
             } else {
-                mainText.textContent = safeString(currentItem.letter);
+                mainText.textContent = item.letter;
                 mainText.style.opacity = 1;
                 image.style.display = "none";
             }
-            await speak(currentItem.letter);
-            currentStep = 1;
+            speak(item.letter, () => { currentStep = 1; isLocked = false; });
 
         } else if (currentStep === 1) {
-            await speak(currentItem.subject);
-            currentStep = 2;
+            speak(item.subject, () => { currentStep = 2; isLocked = false; });
 
         } else if (currentStep === 2) {
-            await speak(currentItem.phrase);
-            currentStep = 0;
-            currentIndex++;
-            if (currentIndex >= alphabetList.length) currentIndex = 0;
+            speak(item.phrase, () => {
+                currentStep = 0;
+                currentIndex++;
+                if (currentIndex >= alphabetList.length) currentIndex = 0;
+                isLocked = false;
+            });
         }
     } catch (e) {
-        console.warn("Interaction error ignored:", e);
+        console.warn("Interaction error:", e);
+        isLocked = false;
     }
-
-    isLocked = false;
 }
 
-// Initialize app
+// Init
 document.addEventListener('DOMContentLoaded', () => {
     mainText.style.display = 'none';
     image.style.display = 'none';
 });
 
-// Use pointerdown for consistent cross-device first-tap behavior
+// Pointerdown for desktop + mobile
 document.addEventListener('pointerdown', handleInteraction);
 
 // Loader skip
