@@ -27,6 +27,7 @@ const alphabetList = [
 let currentIndex = 0;
 let step = 0;
 let isSpeaking = false;
+let appReady = false; // interactions enabled only after preload
 
 const mainText = document.getElementById('main-text');
 const image = document.getElementById('image');
@@ -56,12 +57,25 @@ function hideLoadingScreen() {
     setTimeout(() => {
         loadingScreen.style.display = "none";
         mainText.style.display = "block";
+        appReady = true; // interactions enabled now
     }, 500);
+}
+
+// Preload all images
+function preloadImages(list) {
+    return Promise.all(
+        list.map(item => new Promise(resolve => {
+            const img = new Image();
+            img.src = item.img;
+            img.onload = () => resolve();
+            img.onerror = () => resolve(); // ignore missing images
+        }))
+    );
 }
 
 // Advance steps
 async function nextStep() {
-    if (isSpeaking) return;
+    if (!appReady || isSpeaking) return;
     isSpeaking = true;
 
     if (currentIndex >= alphabetList.length) {
@@ -78,17 +92,14 @@ async function nextStep() {
             if (currentItem.img) {
                 image.src = currentItem.img;
                 image.onload = () => {
-                    hideLoadingScreen();
                     image.style.display = "block";
                     mainText.style.opacity = 0;
                 };
                 image.onerror = () => {
-                    hideLoadingScreen();
                     image.style.display = "none";
                     showElement(mainText, currentItem.letter);
                 };
             } else {
-                hideLoadingScreen();
                 image.style.display = "none";
                 showElement(mainText, currentItem.letter);
             }
@@ -113,6 +124,14 @@ async function nextStep() {
 }
 
 // Event listeners
-document.addEventListener('keydown', nextStep);
-document.addEventListener('click', nextStep);
-document.addEventListener('touchstart', nextStep);
+document.addEventListener('keydown', () => { if(appReady) nextStep(); });
+document.addEventListener('click', () => { if(appReady) nextStep(); });
+document.addEventListener('touchstart', () => { if(appReady) nextStep(); });
+
+// Initialize app after DOM loaded
+document.addEventListener('DOMContentLoaded', async () => {
+    mainText.style.display = 'none';
+    image.style.display = 'none';
+    await preloadImages(alphabetList); // preload all images
+    hideLoadingScreen(); // show main content
+});
