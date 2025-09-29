@@ -22,14 +22,17 @@ body, html {
     height: 100%;
 }
 
-#main-text, #loading-text {
+/* Main Text */
+#main-text {
     font-size: 8vw;
     font-weight: bold;
     opacity: 1;
     transition: opacity 0.5s ease-in-out;
     margin: 0 0 20px 0;
+    display: none;
 }
 
+/* Image */
 #image {
     display: none;
     width: 90vw;
@@ -39,4 +42,35 @@ body, html {
     box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     opacity: 1;
     transition: opacity 0.5s ease-in-out;
+}
+
+/* Loading Screen */
+#loading-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.5s ease-in-out;
+}
+
+#spinner {
+    border: 8px solid #f3f3f3; /* Light grey background */
+    border-top: 8px solid #3498db; /* Blue accent */
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    margin-bottom: 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#loading-screen h1 {
+    font-size: 6vw;
+    font-weight: bold;
+    text-align: center;
+    margin: 0;
 }

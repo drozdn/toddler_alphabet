@@ -30,14 +30,9 @@ let isSpeaking = false;
 
 const mainText = document.getElementById('main-text');
 const image = document.getElementById('image');
-const loadingText = document.getElementById('loading-text');
+const loadingScreen = document.getElementById('loading-screen');
 
-// Initial state
-loadingText.style.display = "block";
-mainText.style.display = "none";
-image.style.display = "none";
-
-// Speak text with small pause
+// Speak text with a small delay
 function speak(text) {
     return new Promise(resolve => {
         const utterance = new SpeechSynthesisUtterance(text);
@@ -56,12 +51,12 @@ function showElement(element, text = null) {
 }
 
 // Hide loading screen with fade
-function hideLoading() {
-    loadingText.style.opacity = 0;
+function hideLoadingScreen() {
+    loadingScreen.style.opacity = 0;
     setTimeout(() => {
-        loadingText.style.display = "none";
+        loadingScreen.style.display = "none";
         mainText.style.display = "block";
-    }, 500); // match CSS transition
+    }, 500);
 }
 
 // Advance steps
@@ -69,7 +64,7 @@ async function nextStep() {
     if (isSpeaking) return;
     isSpeaking = true;
 
-    if(currentIndex >= alphabetList.length) {
+    if (currentIndex >= alphabetList.length) {
         showElement(mainText, "Koniec!");
         image.style.display = "none";
         isSpeaking = false;
@@ -80,25 +75,23 @@ async function nextStep() {
 
     switch(step) {
         case 0:
-            if(currentItem.img) {
+            if (currentItem.img) {
                 image.src = currentItem.img;
-
                 image.onload = () => {
-                    hideLoading();
+                    hideLoadingScreen();
                     image.style.display = "block";
                     mainText.style.opacity = 0;
                 };
                 image.onerror = () => {
-                    hideLoading();
+                    hideLoadingScreen();
                     image.style.display = "none";
                     showElement(mainText, currentItem.letter);
                 };
             } else {
-                hideLoading();
+                hideLoadingScreen();
                 image.style.display = "none";
                 showElement(mainText, currentItem.letter);
             }
-
             await speak(currentItem.letter);
             step++;
             break;
