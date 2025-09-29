@@ -34,7 +34,7 @@ let isLocked = false;
 let appReady = false;
 let firstInteraction = true;
 
-// Preload all images
+// Preload images
 function preloadImages(list) {
     return Promise.all(
         list.map(item => new Promise(resolve => {
@@ -46,7 +46,7 @@ function preloadImages(list) {
     );
 }
 
-// Speak text
+// Speak text with small delay
 function speak(text) {
     return new Promise(resolve => {
         const utterance = new SpeechSynthesisUtterance(text);
@@ -77,7 +77,8 @@ async function handleInteraction() {
     if (firstInteraction) {
         firstInteraction = false;
 
-        if (currentItem.img) {
+        // Show first image
+        if (currentItem.img && currentItem.img.includes(".png")) {  // string check only
             image.src = currentItem.img;
             image.style.display = "block";
             mainText.style.opacity = 0;
@@ -87,12 +88,18 @@ async function handleInteraction() {
             mainText.style.opacity = 1;
         }
 
+        // Mobile speech unlock
+        const unlock = new SpeechSynthesisUtterance("");
+        speechSynthesis.speak(unlock);
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        // Speak first letter
         await speak(currentItem.letter);
-        currentStep = 1;
+        currentStep = 1; // next tap = subject
 
     } else {
         if (currentStep === 0) {
-            if (currentItem.img) {
+            if (currentItem.img && currentItem.img.includes(".png")) {
                 image.src = currentItem.img;
                 image.style.display = "block";
                 mainText.style.opacity = 0;
@@ -129,11 +136,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Event listeners
-document.addEventListener('keydown', handleInteraction);
 document.addEventListener('click', handleInteraction);
 document.addEventListener('touchstart', handleInteraction);
+document.addEventListener('keydown', handleInteraction);
 
-// Allow skipping loader
-loadingScreen.addEventListener('click', () => {
-    hideLoadingScreen();
-});
+// Skip loader
+loadingScreen.addEventListener('click', hideLoadingScreen);
