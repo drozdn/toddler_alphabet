@@ -28,26 +28,25 @@ const mainText = document.getElementById("main-text");
 const image = document.getElementById("image");
 const loadingScreen = document.getElementById("loading-screen");
 
-let currentIndex = -1;
-let currentStep = 0;
+let currentIndex = 0;
+let currentStep = 0; // 0=letter,1=subject,2=phrase
 let isLocked = false;
 let appReady = false;
-let firstInteraction = true; // special handling for first gesture
+let firstInteraction = true;
 
-// Preload images
+// Preload all images
 function preloadImages(list) {
     return Promise.all(
-        list.map(item => {
-            return new Promise(resolve => {
-                const img = new Image();
-                img.src = item.img;
-                img.onload = () => resolve();
-                img.onerror = () => resolve();
-            });
-        })
+        list.map(item => new Promise(resolve => {
+            const img = new Image();
+            img.src = item.img;
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+        }))
     );
 }
 
+// Speak text
 function speak(text) {
     return new Promise(resolve => {
         const utterance = new SpeechSynthesisUtterance(text);
@@ -58,6 +57,7 @@ function speak(text) {
     });
 }
 
+// Hide loader
 function hideLoadingScreen() {
     loadingScreen.style.opacity = 0;
     setTimeout(() => {
@@ -67,20 +67,16 @@ function hideLoadingScreen() {
     }, 500);
 }
 
-async function nextStep() {
-    if (isLocked) return;
+// Main interaction
+async function handleInteraction() {
+    if (!appReady || isLocked) return;
     isLocked = true;
-
-    if (currentStep === 0) {
-        currentIndex++;
-        if (currentIndex >= alphabetList.length) {
-            currentIndex = 0;
-        }
-    }
 
     const currentItem = alphabetList[currentIndex];
 
-    if (currentStep === 0) {
+    if (firstInteraction) {
+        firstInteraction = false;
+
         if (currentItem.img) {
             image.src = currentItem.img;
             image.style.display = "block";
@@ -90,48 +86,40 @@ async function nextStep() {
             mainText.textContent = currentItem.letter;
             mainText.style.opacity = 1;
         }
+
         await speak(currentItem.letter);
-    } else if (currentStep === 1) {
-        await speak(currentItem.subject);
-    } else if (currentStep === 2) {
-        await speak(currentItem.phrase);
+        currentStep = 1;
+
+    } else {
+        if (currentStep === 0) {
+            if (currentItem.img) {
+                image.src = currentItem.img;
+                image.style.display = "block";
+                mainText.style.opacity = 0;
+            } else {
+                image.style.display = "none";
+                mainText.textContent = currentItem.letter;
+                mainText.style.opacity = 1;
+            }
+            await speak(currentItem.letter);
+            currentStep = 1;
+
+        } else if (currentStep === 1) {
+            await speak(currentItem.subject);
+            currentStep = 2;
+
+        } else if (currentStep === 2) {
+            await speak(currentItem.phrase);
+            currentStep = 0;
+            currentIndex++;
+            if (currentIndex >= alphabetList.length) currentIndex = 0;
+        }
     }
 
-    currentStep = (currentStep + 1) % 3;
     isLocked = false;
 }
 
-// Handle first tap separately
-async function handleInteraction() {
-    if (!appReady) return;
-
-    if (firstInteraction) {
-        firstInteraction = false;
-        // Force start with index 0 and step 0 immediately here
-        currentIndex = 0;
-        currentStep = 0;
-
-        const currentItem = alphabetList[currentIndex];
-        if (currentItem.img) {
-            image.src = currentItem.img;
-            image.style.display = "block";
-            mainText.style.opacity = 0;
-        } else {
-            image.style.display = "none";
-            mainText.textContent = currentItem.letter;
-            mainText.style.opacity = 1;
-        }
-
-        // 🔑 Speak the first letter directly in this handler (works on mobile)
-        speak(currentItem.letter).then(() => {
-            currentStep = 1; // move to next step for following interactions
-        });
-    } else {
-        nextStep();
-    }
-}
-
-// Wait for DOM and preload
+// Initialize app
 document.addEventListener('DOMContentLoaded', async () => {
     mainText.style.display = 'none';
     image.style.display = 'none';
@@ -140,7 +128,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     hideLoadingScreen();
 });
 
-// Input listeners
+// Event listeners
 document.addEventListener('keydown', handleInteraction);
 document.addEventListener('click', handleInteraction);
 document.addEventListener('touchstart', handleInteraction);
+
+// Allow skipping loader
+loadingScreen.addEventListener('click', () => {
+    hideLoadingScreen();
+});

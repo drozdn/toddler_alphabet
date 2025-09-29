@@ -7,16 +7,23 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="app">
-        <!-- Graphical Loading Screen -->
-        <div id="loading-screen">
-            <div id="spinner"></div>
-            <h1>Ładowanie...</h1>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loader">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
         </div>
-
-        <h1 id="main-text">Uczę się Alfabetu</h1>
-        <img id="image" src="" alt="">
+        <p>Ładowanie...</p>
+        <p>(Kliknij, aby pominąć)</p>
     </div>
+
+    <!-- Main content -->
+    <div id="main-content">
+        <h1 id="main-text">Uczę się Alfabetu</h1>
+        <img id="image" src="" alt="" />
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
