@@ -22,8 +22,8 @@ body, html {
     height: 100%;
 }
 
-#main-text {
-    font-size: 8vw; /* big title */
+#main-text, #loading-text {
+    font-size: 8vw;
     font-weight: bold;
     opacity: 1;
     transition: opacity 0.5s ease-in-out;
@@ -31,7 +31,7 @@ body, html {
 }
 
 #image {
-    display: none;       /* hide initially */
+    display: none;
     width: 90vw;
     height: 90vh;
     object-fit: contain;
