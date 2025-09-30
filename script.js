@@ -63,7 +63,7 @@ function hideLoadingScreen() {
     }, 500);
 }
 
-// Speak helper
+// Normal speak function
 function speak(text, callback) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "pl-PL";
@@ -72,7 +72,19 @@ function speak(text, callback) {
     speechSynthesis.speak(utterance);
 }
 
-// Handle first tap on mobile safely
+// Safari-safe speak for FIRST utterance
+function speakNow(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "pl-PL";
+    utterance.rate = 0.9;
+    utterance.onend = () => {
+        currentStep = 1;
+        isLocked = false;
+    };
+    speechSynthesis.speak(utterance);
+}
+
+// Handle first tap on Safari + mobile safely
 function handleFirstTap() {
     if (!firstTapDone) {
         firstTapDone = true;
@@ -88,11 +100,15 @@ function handleFirstTap() {
             image.style.display = "none";
         }
 
-        // Call speech directly in gesture handler (mobile-safe)
-        speak(item.letter, () => {
-            currentStep = 1;
-            isLocked = false;
-        });
+        // Safari-safe voice init
+        let voices = speechSynthesis.getVoices();
+        if (!voices || voices.length === 0) {
+            speechSynthesis.onvoiceschanged = () => {
+                speakNow(item.letter);
+            };
+        } else {
+            speakNow(item.letter);
+        }
 
         return true;
     }
