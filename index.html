@@ -1,40 +1,25 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Uczę się Alfabetu</title>
-
-  <!-- PWA manifest -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ffffff">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uczę się Alfabetu</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <div id="loading-screen" class="loader-container">
-    <div class="loader"></div>
-    <p id="progress-text">Ładowanie...</p>
-    <div id="progress-bar-container">
-      <div id="progress-bar"></div>
+    <div id="loading-screen">
+        <div class="loader">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div id="progress-text">0%</div>
     </div>
-  </div>
 
-  <div id="app" class="hidden">
-    <div id="main-text" class="main-text"></div>
-    <img id="image" class="main-image" src="" alt="">
-  </div>
+    <div id="main-container">
+        <h1 id="main-text"></h1>
+        <img id="image" src="" alt="">
+    </div>
 
-  <script src="script.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("service-worker.js")
-          .then(() => console.log("✅ Service Worker registered"))
-          .catch(err => console.error("❌ SW registration failed:", err));
-      });
-    }
-  </script>
+    <script src="script.js"></script>
 </body>
 </html>

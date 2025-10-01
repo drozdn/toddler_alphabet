@@ -1,11 +1,11 @@
 {
   "name": "Uczę się Alfabetu",
   "short_name": "Alfabet",
-  "start_url": ".",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
-  "orientation": "portrait",
+  "background_color": "#00aaff",
+  "theme_color": "#00aaff",
+  "description": "A fun toddler alphabet learning app",
   "icons": [
     {
       "src": "icons/icon-192.png",
