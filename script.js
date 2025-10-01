@@ -48,25 +48,28 @@ alphabetList.forEach(item => {
         progressBar.style.width = percent + '%';
         progressText.textContent = percent + '%';
         if (imagesLoaded === totalImages) {
-            setTimeout(hideLoadingScreen, 300);
+            appReady = true; // ready after all images loaded
         }
     };
 });
 
-// Fallback: hide loader after 3s if something fails
-setTimeout(hideLoadingScreen, 3000);
+// Fallback: hide loader after 5s if user never taps
+setTimeout(() => {
+    if (!firstTapDone) {
+        appReady = true;
+        hideLoadingScreen();
+    }
+}, 5000);
 
 function hideLoadingScreen() {
     loadingScreen.style.opacity = 0;
     setTimeout(() => {
         loadingScreen.style.display = "none";
-        appReady = true;
         mainText.style.display = "block";
         image.style.display = "block";
     }, 500);
 }
 
-// Speak functions
 function speak(text, callback) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "pl-PL";
@@ -75,32 +78,6 @@ function speak(text, callback) {
     speechSynthesis.speak(utterance);
 }
 
-function speakNow(text) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "pl-PL";
-    utterance.rate = 0.9;
-    utterance.onend = () => { currentStep = 1; isLocked = false; };
-    speechSynthesis.speak(utterance);
-}
-
-// Handle first tap safely for Safari
-function handleFirstTap() {
-    if (!firstTapDone) {
-        firstTapDone = true;
-        const item = alphabetList[currentIndex];
-        showItem(item);
-        let voices = speechSynthesis.getVoices();
-        if (!voices || voices.length === 0) {
-            speechSynthesis.onvoiceschanged = () => speakNow(item.letter);
-        } else {
-            speakNow(item.letter);
-        }
-        return true;
-    }
-    return false;
-}
-
-// Show image or letter
 function showItem(item) {
     if (item.img) {
         image.src = item.img;
@@ -113,7 +90,27 @@ function showItem(item) {
     }
 }
 
-// Handle taps
+// Handle first tap: hide loader and start first item
+function handleFirstTap() {
+    if (!firstTapDone && appReady) {
+        firstTapDone = true;
+        hideLoadingScreen();
+
+        const item = alphabetList[currentIndex];
+        showItem(item);
+
+        const utterance = new SpeechSynthesisUtterance(item.letter);
+        utterance.lang = "pl-PL";
+        utterance.rate = 0.9;
+        utterance.onend = () => { currentStep = 1; isLocked = false; };
+        speechSynthesis.speak(utterance);
+
+        return true;
+    }
+    return false;
+}
+
+// Handle normal interactions
 function handleInteraction() {
     if (!appReady || isLocked) return;
     if (handleFirstTap()) return;
@@ -147,4 +144,3 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener('pointerdown', handleInteraction);
-loadingScreen.addEventListener('pointerdown', hideLoadingScreen);

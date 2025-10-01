@@ -1,5 +1,6 @@
-const CACHE_NAME = "alphabet-app-v1";
+const CACHE_NAME = "alphabet-app-v2";
 
+// Relative paths to work on Azure subpaths
 const ASSETS = [
   "./",
   "./index.html",
@@ -33,24 +34,37 @@ const ASSETS = [
   "./images/zamek.png"
 ];
 
-self.addEventListener("install", (event) => {
+// Install event: cache all assets
+self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS).catch(err => console.warn(err)))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(ASSETS).catch(err => console.warn("Some assets failed to cache:", err)))
   );
 });
 
-self.addEventListener("activate", (event) => {
+// Activate event: clear old caches
+self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      )
     )
   );
 });
 
-self.addEventListener("fetch", (event) => {
+// Fetch event: serve cached assets first, fallback to network
+self.addEventListener("fetch", event => {
   event.respondWith(
-    caches.match(event.request).then(response => response || fetch(event.request).catch(() => {
-      if (event.request.destination === "document") return caches.match("./index.html");
-    }))
+    caches.match(event.request).then(cachedResponse => {
+      if (cachedResponse) return cachedResponse;
+
+      return fetch(event.request).catch(() => {
+        // fallback for offline navigation
+        if (event.request.destination === "document") {
+          return caches.match("./index.html");
+        }
+      });
+    })
   );
 });
