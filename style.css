@@ -1,87 +1,68 @@
 body, html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    font-family: Arial, sans-serif;
-    background-color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-#main-text {
-    font-size: 4em;
-    font-weight: bold;
-    text-align: center;
-    margin: 20px;
-}
-
-#image {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    display: none;
-}
-
-#loading-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #ffffff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    transition: opacity 0.5s;
-    z-index: 1000;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: Arial, sans-serif;
+  background-color: #fff;
 }
 
 .loader-container {
-    text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
-.spinner {
-    width: 60px;
-    height: 60px;
-    border: 8px solid #ccc;
-    border-top: 8px solid #4285f4;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 20px auto;
+.loader {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #3498db;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-#loading-screen p {
-    margin: 5px 0;
-    font-size: 1.2em;
-}
-
-.skip {
-    font-size: 0.9em;
-    color: #666;
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 #progress-bar-container {
-    width: 200px;
-    height: 10px;
-    background-color: #eee;
-    border-radius: 5px;
-    margin: 10px auto;
-    overflow: hidden;
+  width: 80%;
+  height: 10px;
+  background: #eee;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 10px;
 }
 
 #progress-bar {
-    width: 0%;
-    height: 100%;
-    background-color: #4285f4;
-    transition: width 0.2s;
+  width: 0%;
+  height: 100%;
+  background: #3498db;
+}
+
+#progress-text {
+  margin-bottom: 5px;
+}
+
+.hidden {
+  display: none;
+}
+
+#main-text {
+  font-size: 64px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 20%;
+}
+
+.main-image {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain;
 }

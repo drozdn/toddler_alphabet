@@ -27,19 +27,18 @@ const alphabetList = [
 const mainText = document.getElementById("main-text");
 const image = document.getElementById("image");
 const loadingScreen = document.getElementById("loading-screen");
-const progressBar = document.getElementById('progress-bar');
-const progressText = document.getElementById('progress-text');
+const progressBar = document.getElementById("progress-bar");
+const progressText = document.getElementById("progress-text");
 
 let currentIndex = 0;
-let currentStep = 0; // 0=letter,1=subject,2=phrase
+let currentStep = 0;
 let isLocked = false;
 let firstTapDone = false;
 let appReady = false;
 
-// Preload images with progress
+// Preload images and show progress
 let imagesLoaded = 0;
 const totalImages = alphabetList.length;
-
 alphabetList.forEach(item => {
     const img = new Image();
     img.src = item.img;
@@ -54,16 +53,20 @@ alphabetList.forEach(item => {
     };
 });
 
-// Hide loader
+// Fallback: hide loader after 3s if something fails
+setTimeout(hideLoadingScreen, 3000);
+
 function hideLoadingScreen() {
     loadingScreen.style.opacity = 0;
     setTimeout(() => {
         loadingScreen.style.display = "none";
-        appReady = true; // app ready before first tap
+        appReady = true;
+        mainText.style.display = "block";
+        image.style.display = "block";
     }, 500);
 }
 
-// Normal speak function
+// Speak functions
 function speak(text, callback) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "pl-PL";
@@ -72,73 +75,58 @@ function speak(text, callback) {
     speechSynthesis.speak(utterance);
 }
 
-// Safari-safe speak for FIRST utterance
 function speakNow(text) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "pl-PL";
     utterance.rate = 0.9;
-    utterance.onend = () => {
-        currentStep = 1;
-        isLocked = false;
-    };
+    utterance.onend = () => { currentStep = 1; isLocked = false; };
     speechSynthesis.speak(utterance);
 }
 
-// Handle first tap on Safari + mobile safely
+// Handle first tap safely for Safari
 function handleFirstTap() {
     if (!firstTapDone) {
         firstTapDone = true;
         const item = alphabetList[currentIndex];
-
-        if (item.img) {
-            image.src = item.img;
-            image.style.display = "block";
-            mainText.style.opacity = 0;
-        } else {
-            mainText.textContent = item.letter;
-            mainText.style.opacity = 1;
-            image.style.display = "none";
-        }
-
-        // Safari-safe voice init
+        showItem(item);
         let voices = speechSynthesis.getVoices();
         if (!voices || voices.length === 0) {
-            speechSynthesis.onvoiceschanged = () => {
-                speakNow(item.letter);
-            };
+            speechSynthesis.onvoiceschanged = () => speakNow(item.letter);
         } else {
             speakNow(item.letter);
         }
-
         return true;
     }
     return false;
 }
 
-// Main interaction for subsequent taps
+// Show image or letter
+function showItem(item) {
+    if (item.img) {
+        image.src = item.img;
+        image.style.display = "block";
+        mainText.style.opacity = 0;
+    } else {
+        mainText.textContent = item.letter;
+        mainText.style.opacity = 1;
+        image.style.display = "none";
+    }
+}
+
+// Handle taps
 function handleInteraction() {
     if (!appReady || isLocked) return;
-    if (handleFirstTap()) return; // first tap handled
+    if (handleFirstTap()) return;
 
     const item = alphabetList[currentIndex];
     isLocked = true;
 
     try {
         if (currentStep === 0) {
-            if (item.img) {
-                image.src = item.img;
-                image.style.display = "block";
-                mainText.style.opacity = 0;
-            } else {
-                mainText.textContent = item.letter;
-                mainText.style.opacity = 1;
-                image.style.display = "none";
-            }
+            showItem(item);
             speak(item.letter, () => { currentStep = 1; isLocked = false; });
-
         } else if (currentStep === 1) {
             speak(item.subject, () => { currentStep = 2; isLocked = false; });
-
         } else if (currentStep === 2) {
             speak(item.phrase, () => {
                 currentStep = 0;
@@ -153,14 +141,10 @@ function handleInteraction() {
     }
 }
 
-// Init
 document.addEventListener('DOMContentLoaded', () => {
     mainText.style.display = 'none';
     image.style.display = 'none';
 });
 
-// Pointerdown for desktop + mobile
 document.addEventListener('pointerdown', handleInteraction);
-
-// Loader skip
 loadingScreen.addEventListener('pointerdown', hideLoadingScreen);

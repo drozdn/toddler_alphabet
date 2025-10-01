@@ -7,28 +7,27 @@
 
   <!-- PWA manifest -->
   <link rel="manifest" href="manifest.json">
-
-  <!-- Theme color (status bar color on mobile) -->
   <meta name="theme-color" content="#ffffff">
-
-  <!-- App icons for iOS -->
   <link rel="apple-touch-icon" href="icons/icon-192.png">
 
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="loader" class="loader-container">
+  <div id="loading-screen" class="loader-container">
     <div class="loader"></div>
-    <p>Ładowanie...</p>
+    <p id="progress-text">Ładowanie...</p>
+    <div id="progress-bar-container">
+      <div id="progress-bar"></div>
+    </div>
   </div>
 
   <div id="app" class="hidden">
-    <div id="display" class="display"></div>
+    <div id="main-text" class="main-text"></div>
+    <img id="image" class="main-image" src="" alt="">
   </div>
 
   <script src="script.js"></script>
   <script>
-    // Register service worker
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("service-worker.js")
