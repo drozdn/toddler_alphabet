@@ -52,13 +52,13 @@ alphabetList.forEach(item => {
     };
 });
 
-// Show click me screen
+// Show click-me screen after preloading
 function showClickMeScreen() {
     loadingScreen.innerHTML = '<div class="click-me-screen">Uczę się Alfabetu<br><small>Tap to start</small></div>';
     clickMeVisible = true;
 }
 
-// Hide click me screen
+// Hide click-me screen and show app content
 function hideClickMeScreen() {
     loadingScreen.style.display = "none";
     mainText.style.display = "block";
@@ -66,7 +66,7 @@ function hideClickMeScreen() {
     clickMeVisible = false;
 }
 
-// Show an item
+// Display an alphabet item
 function showItem(item) {
     if (item.img) {
         image.src = item.img;
@@ -88,19 +88,30 @@ function speak(text, callback) {
     speechSynthesis.speak(utterance);
 }
 
-// Handle first tap
-function handleFirstTap() {
+// Handle first tap (directly triggers audio for iOS)
+function handleFirstTap(event) {
     if (clickMeVisible) {
         hideClickMeScreen();
         const item = alphabetList[currentIndex];
         showItem(item);
-        speak(item.letter, () => { currentStep = 1; isLocked = false; });
+
+        // Direct speech inside user gesture for iOS
+        const utterance = new SpeechSynthesisUtterance(item.letter);
+        utterance.lang = "pl-PL";
+        utterance.rate = 0.9;
+        utterance.onend = () => {
+            currentStep = 1;
+            isLocked = false;
+        };
+        speechSynthesis.speak(utterance);
+
+        clickMeVisible = false;
         return true;
     }
     return false;
 }
 
-// Handle normal interaction
+// Handle normal interaction (after first tap)
 function handleInteraction() {
     if (isLocked || clickMeVisible) return;
     const item = alphabetList[currentIndex];
@@ -121,12 +132,13 @@ function handleInteraction() {
     }
 }
 
-// Event listeners
-document.addEventListener('pointerdown', () => {
-    if (handleFirstTap()) return;
+// Event listener for taps/clicks
+document.addEventListener('pointerdown', (event) => {
+    if (handleFirstTap(event)) return;
     handleInteraction();
 });
 
+// Hide content initially
 document.addEventListener('DOMContentLoaded', () => {
     mainText.style.display = 'none';
     image.style.display = 'none';
