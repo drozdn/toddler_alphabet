@@ -1,28 +1,41 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Uczę się Alfabetu</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uczę się Alfabetu</title>
+
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Theme color (status bar color on mobile) -->
+  <meta name="theme-color" content="#ffffff">
+
+  <!-- App icons for iOS -->
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="loading-screen">
-        <div class="loader-container">
-            <div class="spinner"></div>
-            <p>Ładowanie... <span id="progress-text">0%</span></p>
-            <div id="progress-bar-container">
-                <div id="progress-bar"></div>
-            </div>
-            <p class="skip">Dotknij, aby pominąć</p>
-        </div>
-    </div>
+  <div id="loader" class="loader-container">
+    <div class="loader"></div>
+    <p>Ładowanie...</p>
+  </div>
 
-    <div id="main-content">
-        <h1 id="main-text">Uczę się Alfabetu</h1>
-        <img id="image" src="" alt="Alphabet Image">
-    </div>
+  <div id="app" class="hidden">
+    <div id="display" class="display"></div>
+  </div>
 
-    <script src="script.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Register service worker
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js")
+          .then(() => console.log("✅ Service Worker registered"))
+          .catch(err => console.error("❌ SW registration failed:", err));
+      });
+    }
+  </script>
 </body>
 </html>
