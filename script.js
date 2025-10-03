@@ -1,3 +1,11 @@
+const appContent = document.getElementById("app");
+const loader = document.getElementById("loader");
+
+let currentIndex = 0;
+let currentStep = 0;
+let isLocked = false;
+let started = false;
+
 const alphabetList = [
     { letter: "A", subject: "Arbuz", phrase: "A jak Arbuz", img: "images/arbuz.png" },
     { letter: "B", subject: "Balon", phrase: "B jak Balon", img: "images/balon.png" },
@@ -24,122 +32,99 @@ const alphabetList = [
     { letter: "Z", subject: "Zamek", phrase: "Z jak Zamek", img: "images/zamek.png" }
 ];
 
-const mainText = document.getElementById("main-text");
-const image = document.getElementById("image");
-const loadingScreen = document.getElementById("loading-screen");
-const progressBar = document.getElementById("progress-bar");
-const progressText = document.getElementById("progress-text");
+// Show Start Screen
+function showStartScreen() {
+    appContent.innerHTML = `
+        <div class="start-screen">
+            <h1>Uczę się alfabetu</h1>
+            <button id="startBtn">Start</button>
+        </div>
+    `;
 
-let currentIndex = 0;
-let currentStep = 0;
-let isLocked = false;
-let clickMeVisible = false;
+    document.getElementById("startBtn").addEventListener("click", () => {
+        // Unlock speech synthesis on iOS
+        const unlock = new SpeechSynthesisUtterance(" ");
+        unlock.lang = "pl-PL";
+        speechSynthesis.speak(unlock);
 
-// Preload images
-let imagesLoaded = 0;
-const totalImages = alphabetList.length;
-alphabetList.forEach(item => {
-    const img = new Image();
-    img.src = item.img;
-    img.onload = img.onerror = () => {
-        imagesLoaded++;
-        const percent = Math.round((imagesLoaded / totalImages) * 100);
-        progressBar.style.width = percent + '%';
-        progressText.textContent = percent + '%';
-        if (imagesLoaded === totalImages) {
-            showClickMeScreen();
-        }
-    };
-});
+        started = true;
+        currentIndex = 0;
+        currentStep = 0;
+        isLocked = false;
 
-// Show click-me screen after preloading
-function showClickMeScreen() {
-    loadingScreen.innerHTML = '<div class="click-me-screen">Uczę się Alfabetu<br><small>Tap to start</small></div>';
-    clickMeVisible = true;
+        showItem(alphabetList[currentIndex]);
+        speak(alphabetList[currentIndex].letter, () => {
+            currentStep = 1;
+        });
+    });
 }
 
-// Hide click-me screen and show app content
-function hideClickMeScreen() {
-    loadingScreen.style.display = "none";
-    mainText.style.display = "block";
-    image.style.display = "block";
-    clickMeVisible = false;
-}
-
-// Display an alphabet item
+// Show image/item
 function showItem(item) {
-    if (item.img) {
-        image.src = item.img;
-        image.style.display = "block";
-        mainText.style.opacity = 0;
-    } else {
-        mainText.textContent = item.letter;
-        mainText.style.opacity = 1;
-        image.style.display = "none";
-    }
+    appContent.innerHTML = `
+        <div class="item-container">
+            <img src="${item.img}" alt="${item.subject}" />
+        </div>
+    `;
 }
 
-// Speak helper
+// Speech synthesis
 function speak(text, callback) {
+    if (!text) {
+        if (callback) callback();
+        return;
+    }
+    isLocked = true;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "pl-PL";
     utterance.rate = 0.9;
-    utterance.onend = () => setTimeout(callback, 50);
+    utterance.onend = () => {
+        setTimeout(() => {
+            isLocked = false;
+            if (callback) callback();
+        }, 50);
+    };
     speechSynthesis.speak(utterance);
 }
 
-// Handle first tap (directly triggers audio for iOS)
-function handleFirstTap(event) {
-    if (clickMeVisible) {
-        hideClickMeScreen();
-        const item = alphabetList[currentIndex];
-        showItem(item);
-
-        // Direct speech inside user gesture for iOS
-        const utterance = new SpeechSynthesisUtterance(item.letter);
-        utterance.lang = "pl-PL";
-        utterance.rate = 0.9;
-        utterance.onend = () => {
-            currentStep = 1;
-            isLocked = false;
-        };
-        speechSynthesis.speak(utterance);
-
-        clickMeVisible = false;
-        return true;
-    }
-    return false;
-}
-
-// Handle normal interaction (after first tap)
+// Handle interactions
 function handleInteraction() {
-    if (isLocked || clickMeVisible) return;
-    const item = alphabetList[currentIndex];
-    isLocked = true;
+    if (!started || isLocked) return;
 
-    if (currentStep === 0) {
-        showItem(item);
-        speak(item.letter, () => { currentStep = 1; isLocked = false; });
-    } else if (currentStep === 1) {
-        speak(item.subject, () => { currentStep = 2; isLocked = false; });
+    const item = alphabetList[currentIndex];
+
+    if (currentStep === 1) {
+        speak(item.subject, () => { currentStep = 2; });
     } else if (currentStep === 2) {
-        speak(item.phrase, () => {
-            currentStep = 0;
-            currentIndex++;
-            if (currentIndex >= alphabetList.length) currentIndex = 0;
-            isLocked = false;
-        });
+        speak(item.phrase, () => { currentStep = 3; });
+    } else if (currentStep === 3) {
+        currentIndex = (currentIndex + 1) % alphabetList.length;
+        currentStep = 0;
+        showItem(alphabetList[currentIndex]);
+        speak(alphabetList[currentIndex].letter, () => { currentStep = 1; });
     }
 }
 
-// Event listener for taps/clicks
-document.addEventListener('pointerdown', (event) => {
-    if (handleFirstTap(event)) return;
-    handleInteraction();
-});
+document.addEventListener("pointerdown", handleInteraction);
+document.addEventListener("keydown", handleInteraction);
 
-// Hide content initially
-document.addEventListener('DOMContentLoaded', () => {
-    mainText.style.display = 'none';
-    image.style.display = 'none';
+// Preload images
+function preloadImages(list, callback) {
+    let loaded = 0;
+    list.forEach(item => {
+        const img = new Image();
+        img.src = item.img;
+        img.onload = img.onerror = () => {
+            loaded++;
+            if (loaded === list.length) callback();
+        };
+    });
+}
+
+window.addEventListener("load", () => {
+    preloadImages(alphabetList, () => {
+        loader.classList.add("hidden");
+        appContent.classList.remove("hidden");
+        showStartScreen();
+    });
 });
